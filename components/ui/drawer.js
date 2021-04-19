@@ -7,6 +7,7 @@ import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config'
 import UserContext from '../../store/user-context'
 import Chat from '../ui/chat'
+import { getRecipientEmail } from '../../helpers/get-recipient-email'
 
 const useStyles = makeStyles({
   list: {
@@ -45,7 +46,7 @@ export default function TemporaryDrawer(props) {
           chatsSnapshot?.docs.map((chat) => (
             <Chat
               id={chat.id}
-              friendEmail={chat.data().users[1]}
+              friendEmail={getRecipientEmail(chat.data().users, userCtx.email)}
               handleClickFriend={handleClickFriend}
             />
           ))

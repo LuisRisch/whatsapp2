@@ -6,6 +6,7 @@ import Avatar from '@material-ui/core/Avatar';
 import { makeStyles } from '@material-ui/core/styles';
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config';
+import Skeleton from '@material-ui/lab/Skeleton';
 
 const useStyles = makeStyles({
   textPrimary: {
@@ -20,7 +21,7 @@ const useStyles = makeStyles({
 
 export default function Chat(props) {
   const { id, friendEmail, handleClickFriend } = props
-  const [recipientSnapshot] = useCollection(
+  const [recipientSnapshot, loading] = useCollection(
     db.collection('users').where('email', '==', friendEmail)
   )
   const recipient = recipientSnapshot?.docs?.[0]?.data()
@@ -33,14 +34,23 @@ export default function Chat(props) {
       style={{ borderBottom: "1px solid #30383d" }}
       onClick={() => handleClickFriend(id)}
     >
-      <ListItemIcon>
-        {
-          recipient ?
-            <Avatar src={recipient?.photoURL}/>
-            :
-            <Avatar />
-        }
-      </ListItemIcon>
+      {
+        loading ?
+          <ListItemIcon>
+            <Skeleton animation="wave" variant="circle">
+              <Avatar />
+            </Skeleton>
+          </ListItemIcon>
+          :
+          <ListItemIcon>
+            {
+              recipient ?
+                <Avatar src={recipient?.photoURL} />
+                :
+                <Avatar />
+            }
+          </ListItemIcon>
+      }
       <ListItemText primary={<Typography type="body2" className={classes.textPrimary}>{friendEmail}</Typography>} />
     </ListItem>
   )
