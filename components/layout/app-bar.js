@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { makeStyles } from '@material-ui/core/styles';
 import { db } from '../../firebase-config/firebase-config'
@@ -14,9 +14,11 @@ import Avatar from '@material-ui/core/Avatar';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Grid from '@material-ui/core/Grid';
 import SearchIcon from '@material-ui/icons/Search';
-import FormDialog from './find-friends-dialog';
-import SignOutDialog from './sign-out-dialog';
+import FormDialog from '../dialogs/find-friends-dialog';
+import SignOutDialog from '../dialogs/sign-out-dialog';
 import TimeAgo from 'timeago-react'
+import Skeleton from '@material-ui/lab/Skeleton';
+import { useWindowSize } from '../../helpers/get-window-size'
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
@@ -37,7 +39,6 @@ const useStyles = makeStyles((theme) => ({
   textPrimary: {
     color: "rgba(241, 241, 242, 0.92)",
     fontSize: 16,
-    width: 80,
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     overflow: "hidden"
@@ -45,19 +46,24 @@ const useStyles = makeStyles((theme) => ({
   textSecondary: {
     color: "rgba(241, 241, 242, 0.63)",
     fontSize: 13,
-    width: 80,
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     overflow: "hidden"
   },
+  avatar: {
+    height: 25,
+    width: 25
+  }
 }));
 
 export default function ChatAppBar(props) {
+  const windowSize = useWindowSize()
   const classes = useStyles()
   const userCtx = useContext(UserContext)
   const router = useRouter()
   const userChatRef = db.collection('chats').where('users', 'array-contains', userCtx.email)
   const [chatsSnapshot] = useCollection(userChatRef)
+  const [textWidth, setTextWidth] = useState(80)
   const [open, setOpen] = useState(false)
   const [openSignOutModal, setOpenSignOutModal] = useState(false)
   const [email, setEmail] = useState("")
@@ -66,7 +72,7 @@ export default function ChatAppBar(props) {
     text: ""
   })
 
-  const { friendData, handleDrawerOpen } = props
+  const { friendData, handleDrawerOpen, loading } = props
 
   function handleOpen() {
     setOpen(true)
@@ -129,6 +135,15 @@ export default function ChatAppBar(props) {
     setOpenSignOutModal(true)
   }
 
+  useEffect(() => {
+    if (windowSize.width >= 550)
+      setTextWidth(300)
+    else if (windowSize.width >= 350)
+      setTextWidth(120)
+    else
+      setTextWidth(80)
+  }, [windowSize])
+
   return (
     <AppBar
       position="fixed"
@@ -180,49 +195,76 @@ export default function ChatAppBar(props) {
             </Grid>
             <div className={classes.sizedBox} />
             <Grid item>
-              <ListItem>
-                <ListItemAvatar>
-                  {
-                    friendData ?
-                      <Avatar src={friendData.photoURL} />
-                      :
-                      <Avatar />
-                  }
-                </ListItemAvatar>
-                <ListItemText
-                  primary=
-                  {
-                    friendData ?
-                      <Typography type="body2" className={classes.textPrimary}>
-                        {friendData.email}
+              {
+                loading ?
+                  <ListItem>
+                    <ListItemAvatar>
+                      <Skeleton animation="wave" variant="circle">
+                        <Avatar />
+                      </Skeleton>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary=
+                      {
+                        <Skeleton animation="wave" variant="text" height={18} width={90}>
+                        </Skeleton>
+                      }
+                      secondary=
+                      {
+                        <Skeleton animation="wave" variant="text" height={18} width={90}>
+                        </Skeleton>
+                      }
+                    />
+                  </ListItem>
+                  :
+                  <ListItem>
+                    <ListItemAvatar>
+                      {
+                        friendData ?
+                          <Avatar src={friendData.photoURL} />
+                          :
+                          <Avatar />
+                      }
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary=
+                      {
+                        friendData ?
+                          <Typography type="body2" className={classes.textPrimary} style={{ width: textWidth }}>
+                            {friendData.email}
+                          </Typography>
+                          :
+                          <Typography type="body2" className={classes.textPrimary} style={{ width: textWidth }}>
+                            Indisponível
                       </Typography>
-                      :
-                      <Typography type="body2" className={classes.textPrimary}>
-                        Indisponível
-                      </Typography>
-                  }
+                      }
 
-                  secondary=
-                  {
-                    friendData?.lastSeen?.toDate() ? (
-                      <Typography type="body2" className={classes.textSecondary}>
-                        <TimeAgo datetime={friendData?.lastSeen?.toDate()} />
-                      </Typography>
-                    )
-                      :
-                      <Typography type="body2" className={classes.textSecondary}>
-                        Indisponível
-                      </Typography>
-                  }
-
-                />
-              </ListItem>
+                      secondary=
+                      {
+                        friendData?.lastSeen?.toDate() ? (
+                          <Typography type="body2" className={classes.textSecondary} style={{ width: textWidth }}>
+                            <TimeAgo datetime={friendData?.lastSeen?.toDate()} style={{ width: textWidth }} />
+                          </Typography>
+                        )
+                          :
+                          <Typography type="body2" className={classes.textSecondary} style={{ width: textWidth }}>
+                            Indisponível
+                          </Typography>
+                      }
+                    />
+                  </ListItem>
+              }
             </Grid>
           </Grid>
         </Grid>
 
         <Grid item>
-          <Avatar style={{ height: 25, width: 25 }} src={userCtx.photoUrl} alt="Avatar" onClick={handleOpenSignOutModal} />
+          <Avatar
+            className={classes.avatar}
+            src={userCtx.photoUrl}
+            alt="Avatar"
+            onClick={handleOpenSignOutModal}
+          />
         </Grid>
       </Grid>
     </AppBar>

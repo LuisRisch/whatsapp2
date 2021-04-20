@@ -43,7 +43,6 @@ const useStyles = makeStyles((theme) => ({
 
 export default function MyMessage({ user, message }) {
   const classes = useStyles()
-  console.log(message)
   return (
     <li className={classes.container}>
       <Paper square elevation={6} className={classes.paper}>

@@ -3,8 +3,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Grid from '@material-ui/core/Grid';
 import Image from 'next/image'
-import ChatAppBar from '../../components/ui/app-bar'
-import DrawerChat from '../../components/ui/drawer'
+import ChatAppBar from '../../components/layout/app-bar'
+import DrawerChat from '../../components/layout/drawer'
 import Head from 'next/head'
 
 const useStyles = makeStyles((theme) => ({

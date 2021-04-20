@@ -95,7 +95,6 @@ export function UserContextProvider(props) {
         )
         setIsLoading(false)
       } catch (error) {
-        console.log(error)
         setActiveUser(null)
         handleSnack(
           true,
@@ -120,7 +119,6 @@ export function UserContextProvider(props) {
         )
         setIsLoading(false)
       } catch (error) {
-        console.log(error)
         handleSnack(
           true,
           `Erro ao fazer sign out!`,

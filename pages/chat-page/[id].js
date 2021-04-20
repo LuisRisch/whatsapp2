@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import ChatAppBar from '../../components/ui/app-bar'
-import DrawerChat from '../../components/ui/drawer'
+import ChatAppBar from '../../components/layout/app-bar'
+import DrawerChat from '../../components/layout/drawer'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import ChatInputNormal from '../../components/chat-page/chat-input-normal'
@@ -57,6 +57,9 @@ export default function ChatPage({ chat, messages }) {
   const [open, setOpen] = React.useState(false)
   const messageEnd = React.useRef(null)
   const [input, setInput] = React.useState("")
+
+  const friendEmail = getRecipientEmail(chat.users, userCtx.email)
+
   const [messagesSnapshot] = useCollection(
     db
       .collection('chats')
@@ -64,10 +67,10 @@ export default function ChatPage({ chat, messages }) {
       .collection("messages")
       .orderBy('timestamp', 'asc')
   )
-  const [recipientSnapshot] = useCollection(
+  const [recipientSnapshot, loading] = useCollection(
     db
       .collection('users')
-      .where("email", "==", getRecipientEmail(chat.users, userCtx.email))
+      .where("email", "==", friendEmail)
   )
 
   const recipient = recipientSnapshot?.docs?.[0]?.data()
@@ -114,7 +117,6 @@ export default function ChatPage({ chat, messages }) {
   }
 
   const handleSendMessage = (e) => {
-    // e.preventDefault()
 
     // update last seen
     db.collection('users').doc(userCtx.uid).set({
@@ -142,30 +144,30 @@ export default function ChatPage({ chat, messages }) {
   };
 
   const scrollToBottom = () => {
-
+    messageEnd.current.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
-    messageEnd.current.scrollIntoView({ behavior: 'smooth' })
+    scrollToBottom()
   }, [messagesSnapshot])
 
   return (
     <div className={classes.root}>
       <Head>
         <title>
-          Home
+          {`Conversando com ${friendEmail}`}
         </title>
-        <meta description="Home page with some instructions" name="Home page" />
+        <meta description={`Chat page with ${friendEmail}`} name="Chat page" />
       </Head>
       <CssBaseline />
-      <ChatAppBar handleDrawerOpen={handleDrawerOpen} friendData={recipient} />
+      <ChatAppBar handleDrawerOpen={handleDrawerOpen} friendData={recipient} loading={loading} />
       <DrawerChat open={open} handleDrawerClose={handleDrawerClose} />
       <main className={classes.content}>
         <div className={classes.toolbar} />
         <div className={classes.chatLayout}>
           <ChatList>
             {showMessages()}
-            <div ref={messageEnd}/>
+            <div ref={messageEnd} />
           </ChatList>
           <ChatInputNormal
             value={input}
@@ -201,8 +203,6 @@ export async function getServerSideProps(context) {
     id: chatRes.id,
     ...chatRes.data()
   }
-
-  console.log(chat, messages)
 
   return {
     props: {
