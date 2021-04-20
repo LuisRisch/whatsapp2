@@ -62,6 +62,7 @@ export default function ChatInputNormal(props) {
               onChange={props.onChange}
               value={props.value}
               onKeyDown={handleKeyDown}
+              ref={input => input && input.focus()}
             />
           </Grid>
           <Grid item>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import ChatAppBar from '../../components/ui/app-bar'
@@ -55,6 +55,7 @@ export default function ChatPage({ chat, messages }) {
   const id = router.query.id
   const userCtx = React.useContext(UserContext)
   const [open, setOpen] = React.useState(false)
+  const messageEnd = React.useRef(null)
   const [input, setInput] = React.useState("")
   const [messagesSnapshot] = useCollection(
     db
@@ -140,6 +141,14 @@ export default function ChatPage({ chat, messages }) {
     setOpen(false);
   };
 
+  const scrollToBottom = () => {
+
+  }
+
+  useEffect(() => {
+    messageEnd.current.scrollIntoView({ behavior: 'smooth' })
+  }, [messagesSnapshot])
+
   return (
     <div className={classes.root}>
       <Head>
@@ -156,6 +165,7 @@ export default function ChatPage({ chat, messages }) {
         <div className={classes.chatLayout}>
           <ChatList>
             {showMessages()}
+            <div ref={messageEnd}/>
           </ChatList>
           <ChatInputNormal
             value={input}
