@@ -13,6 +13,7 @@ import UserContext from '../../store/user-context'
 import firebase from 'firebase'
 import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
+import { getRecipientEmail } from '../../helpers/get-recipient-email'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -65,7 +66,7 @@ export default function ChatPage({ chat, messages }) {
   const [recipientSnapshot] = useCollection(
     db
       .collection('users')
-      .where("email", "==", chat.users[1])
+      .where("email", "==", getRecipientEmail(chat.users, userCtx.email))
   )
 
   const recipient = recipientSnapshot?.docs?.[0]?.data()
