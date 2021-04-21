@@ -3,32 +3,35 @@ import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   messagesWrapper: {
-    overflowX: 'scroll',
-    height: '100%',
-    width: '100%',
-    paddingBottom: '50px',
-  },
-  messageWrapper: {
-    display: 'flex',
-    direction: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
     width: "90%",
+    paddingBottom: '50px',
     margin: "0 auto"
   },
+  list: {
+    display: 'flex',
+    flexDirection: 'column-reverse',
+  }
 }));
 
 export default function ChatList(props) {
   const classes = useStyles()
+
+  const handleScroll = (e) => {
+    console.log(e)
+    const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+    if (bottom) {
+      console.log('reached in the bottom')
+    }
+  }
+
   return (
     <div
       className={classes.messagesWrapper}
+      onScrollCapture={handleScroll}
     >
-      <div className={classes.messageWrapper}>
-        <ul style={{ width: "100%" }}>
-          {props.children}
-        </ul>
-      </div>
+      <ul className={classes.list} onScrollCapture={handleScroll}>
+        {props.children}
+      </ul>
     </div>
   )
 }

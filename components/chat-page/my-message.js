@@ -4,20 +4,6 @@ import { Avatar, Grid, Paper } from '@material-ui/core';
 import moment from 'moment'
 
 const useStyles = makeStyles((theme) => ({
-  messagesWrapper: {
-    overflowX: 'scroll',
-    height: '100%',
-    width: '100%',
-    paddingBottom: '50px',
-  },
-  messageWrapper: {
-    display: 'flex',
-    direction: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    width: "90%",
-    margin: "0 auto"
-  },
   container: {
     margin: "25px 0"
   },

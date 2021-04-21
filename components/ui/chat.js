@@ -17,6 +17,9 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
     overflow: "hidden"
   },
+  list: {
+    borderBottom: "1px solid #30383d"
+  }
 });
 
 export default function Chat(props) {
@@ -31,7 +34,7 @@ export default function Chat(props) {
     <ListItem
       button
       key={id}
-      style={{ borderBottom: "1px solid #30383d" }}
+      className={classes.list}
       onClick={() => handleClickFriend(id)}
     >
       {

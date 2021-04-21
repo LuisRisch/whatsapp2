@@ -14,15 +14,10 @@ import firebase from 'firebase'
 import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
+import { ThreeBounce } from 'better-react-spinkit'
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
   toolbar: {
-    display: 'flex',
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#2A2F32",
     ...theme.mixins.toolbar,
   },
@@ -31,9 +26,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
     paddingTop: theme.spacing(1),
     overflowY: "scroll",
-    overflowX: "hidden",
-    height: "100%",
-    minHeight: "100vh"
+    minHeight: '100vh'
   },
   title: {
     color: "rgba(241, 241, 242, 0.95)",
@@ -44,9 +37,14 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
-    overflow: 'hidden',
   },
+  loading: {
+    height: "100vh",
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  }
 }));
 
 export default function ChatPage({ chat, messages }) {
@@ -57,16 +55,15 @@ export default function ChatPage({ chat, messages }) {
   const [open, setOpen] = React.useState(false)
   const messageEnd = React.useRef(null)
   const [input, setInput] = React.useState("")
-
+  const [limit, setLimit] = React.useState(5)
   const friendEmail = getRecipientEmail(chat.users, userCtx.email)
-
-  const [messagesSnapshot] = useCollection(
-    db
-      .collection('chats')
-      .doc(id)
-      .collection("messages")
-      .orderBy('timestamp', 'asc')
-  )
+  const messageRef = db
+    .collection('chats')
+    .doc(id)
+    .collection("messages")
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+  const [messagesSnapshot, loadingMessages] = useCollection(messageRef)
   const [recipientSnapshot, loading] = useCollection(
     db
       .collection('users')
@@ -124,13 +121,14 @@ export default function ChatPage({ chat, messages }) {
     }, { merge: true })
 
     // send message
+
     db.collection('chats').doc(id).collection('messages').add({
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       message: input,
       user: userCtx.email,
       photoUrl: userCtx.photoUrl
     })
-
+    scrollToBottom()
     setInput("")
   }
 
@@ -147,12 +145,23 @@ export default function ChatPage({ chat, messages }) {
     messageEnd.current.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const loadMoreMessage = () => {
+    setLimit(limit + 5)
+  }
+
+  window.onscroll = function () {
+    if (window.pageYOffset === 0) {
+      if (messagesSnapshot?.docs.length >= limit)
+        loadMoreMessage()
+    }
+  };
+
   useEffect(() => {
     scrollToBottom()
   }, [messagesSnapshot])
-
+  
   return (
-    <div className={classes.root}>
+    <div>
       <Head>
         <title>
           {`Conversando com ${friendEmail}`}
@@ -166,8 +175,15 @@ export default function ChatPage({ chat, messages }) {
         <div className={classes.toolbar} />
         <div className={classes.chatLayout}>
           <ChatList>
-            {showMessages()}
             <div ref={messageEnd} />
+            {
+              loadingMessages ?
+                <div className={classes.loading}>
+                  <ThreeBounce size={15} color='green' />
+                </div>
+                :
+                showMessages()
+            }
           </ChatList>
           <ChatInputNormal
             value={input}
