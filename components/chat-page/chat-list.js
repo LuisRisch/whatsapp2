@@ -16,20 +16,11 @@ const useStyles = makeStyles((theme) => ({
 export default function ChatList(props) {
   const classes = useStyles()
 
-  const handleScroll = (e) => {
-    console.log(e)
-    const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
-    if (bottom) {
-      console.log('reached in the bottom')
-    }
-  }
-
   return (
     <div
       className={classes.messagesWrapper}
-      onScrollCapture={handleScroll}
     >
-      <ul className={classes.list} onScrollCapture={handleScroll}>
+      <ul className={classes.list}>
         {props.children}
       </ul>
     </div>

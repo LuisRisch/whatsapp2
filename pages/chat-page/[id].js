@@ -48,6 +48,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function ChatPage({ chat, messages }) {
+  console.log(chat)
   const classes = useStyles()
   const router = useRouter()
   const id = router.query.id
@@ -63,6 +64,7 @@ export default function ChatPage({ chat, messages }) {
     .collection("messages")
     .orderBy('timestamp', 'desc')
     .limit(limit)
+    
   const [messagesSnapshot, loadingMessages] = useCollection(messageRef)
   const [recipientSnapshot, loading] = useCollection(
     db
@@ -114,22 +116,28 @@ export default function ChatPage({ chat, messages }) {
   }
 
   const handleSendMessage = (e) => {
+    if (input.trim().length >= 1) {
+      // update last seen
+      db.collection('users').doc(userCtx.uid).set({
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true })
 
-    // update last seen
-    db.collection('users').doc(userCtx.uid).set({
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true })
+      // send message
+      db.collection('chats').doc(id).collection('messages').add({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        message: input,
+        user: userCtx.email,
+        photoUrl: userCtx.photoUrl
+      })
 
-    // send message
+      //updates latest infos of chat
+      db.collection('chats').doc(id).set({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        lastMessage: input,
+      }, { merge: true })
 
-    db.collection('chats').doc(id).collection('messages').add({
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      message: input,
-      user: userCtx.email,
-      photoUrl: userCtx.photoUrl
-    })
-    scrollToBottom()
-    setInput("")
+      setInput("")
+    }
   }
 
 
@@ -159,7 +167,11 @@ export default function ChatPage({ chat, messages }) {
   useEffect(() => {
     scrollToBottom()
   }, [messagesSnapshot])
-  
+
+  useEffect(() => {
+    setLimit(5)
+  }, [chat.id])
+
   return (
     <div>
       <Head>
@@ -217,7 +229,7 @@ export async function getServerSideProps(context) {
   const chatRes = await ref.get()
   const chat = {
     id: chatRes.id,
-    ...chatRes.data()
+    users: chatRes.data().users
   }
 
   return {

@@ -108,6 +108,7 @@ export default function ChatAppBar(props) {
 
   function handleAddFriend() {
     if (email.includes("@") && !chatAlreadyExists(email) && email !== userCtx.email) {
+      alert('O usuário foi adiciona a sua lista de conversas. Entretanto, é possível que este usuário não esteja cadastrado em nossa base de dados ainda. Se isso acontecer, ao entrar na conversa com este usuário, aparecerá que ele está indisponível')
       db.collection('chats').add({
         users: [userCtx.email, email]
       })

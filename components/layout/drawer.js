@@ -6,7 +6,7 @@ import { useContext } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config'
 import UserContext from '../../store/user-context'
-import Chat from '../ui/chat'
+import Chat from './chat'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
 import ListItem from '@material-ui/core/ListItem'
 import Typography from '@material-ui/core/Typography'
@@ -72,6 +72,8 @@ export default function TemporaryDrawer(props) {
               key={chat.id}
               id={chat.id}
               friendEmail={getRecipientEmail(chat.data().users, userCtx.email)}
+              lastMessage={chat.data().lastMessage}
+              timestamp={chat.data().timestamp?.toDate().getTime()}
               handleClickFriend={handleClickFriend}
             />
           ))

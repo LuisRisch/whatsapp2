@@ -7,11 +7,29 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config';
 import Skeleton from '@material-ui/lab/Skeleton';
+import TimeAgo from 'timeago-react'
+import Grid from '@material-ui/core/Grid'
 
 const useStyles = makeStyles({
   textPrimary: {
     color: "rgba(241, 241, 242, 0.92)",
     fontSize: 16,
+    width: 180,
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    overflow: "hidden"
+  },
+  textSecondary: {
+    color: "rgba(241, 241, 242, 0.63)",
+    fontSize: 14,
+    width: 180,
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    overflow: "hidden"
+  },
+  textTertiary: {
+    color: "rgba(241, 241, 242, 0.33)",
+    fontSize: 14,
     width: 180,
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -23,7 +41,7 @@ const useStyles = makeStyles({
 });
 
 export default function Chat(props) {
-  const { id, friendEmail, handleClickFriend } = props
+  const { id, friendEmail, handleClickFriend, lastMessage, timestamp } = props
   const [recipientSnapshot, loading] = useCollection(
     db.collection('users').where('email', '==', friendEmail)
   )
@@ -54,7 +72,21 @@ export default function Chat(props) {
             }
           </ListItemIcon>
       }
-      <ListItemText primary={<Typography type="body2" className={classes.textPrimary}>{friendEmail}</Typography>} />
+      <ListItemText
+        primary={<Typography type="body2" className={classes.textPrimary}>{friendEmail}</Typography>}
+        secondary={
+          <>
+            {
+              lastMessage &&
+              <Typography type="body2" className={classes.textSecondary}>{lastMessage}</Typography>
+            }
+            {
+              timestamp &&
+              <TimeAgo datetime={timestamp} className={classes.textTertiary} />
+            }
+          </>
+        }
+      />
     </ListItem>
   )
 }
