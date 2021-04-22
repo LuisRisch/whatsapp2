@@ -13,6 +13,7 @@
     "@material-ui/lab": "^4.0.0-alpha.57",
     "better-react-spinkit": "^2.0.4",
     "date-fns": "^2.20.1",
+    "emoji-picker-react": "^3.4.4",
     "firebase": "^8.3.3",
     "moment": "^2.29.1",
     "next": "10.1.3",

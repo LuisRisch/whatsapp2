@@ -13,7 +13,7 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
   },
   messageInput: {
-    paddingTop: theme.spacing.unit * 0.6,
+    paddingTop: theme.spacing(0.6),
     backgroundColor: "#1e2428",
   },
   icon: {

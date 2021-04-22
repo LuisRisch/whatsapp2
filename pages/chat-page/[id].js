@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import ChatAppBar from '../../components/ui/app-bar'
-import DrawerChat from '../../components/ui/drawer'
+import ChatAppBar from '../../components/layout/app-bar'
+import DrawerChat from '../../components/layout/drawer'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import ChatInputNormal from '../../components/chat-page/chat-input-normal'
@@ -14,15 +14,10 @@ import firebase from 'firebase'
 import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
+import { ThreeBounce } from 'better-react-spinkit'
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
   toolbar: {
-    display: 'flex',
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#2A2F32",
     ...theme.mixins.toolbar,
   },
@@ -31,9 +26,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
     paddingTop: theme.spacing(1),
     overflowY: "scroll",
-    overflowX: "hidden",
-    height: "100%",
-    minHeight: "100vh"
+    minHeight: '100vh'
   },
   title: {
     color: "rgba(241, 241, 242, 0.95)",
@@ -44,12 +37,18 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
-    overflow: 'hidden',
   },
+  loading: {
+    height: "100vh",
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  }
 }));
 
 export default function ChatPage({ chat, messages }) {
+  console.log(chat)
   const classes = useStyles()
   const router = useRouter()
   const id = router.query.id
@@ -57,17 +56,20 @@ export default function ChatPage({ chat, messages }) {
   const [open, setOpen] = React.useState(false)
   const messageEnd = React.useRef(null)
   const [input, setInput] = React.useState("")
-  const [messagesSnapshot] = useCollection(
-    db
-      .collection('chats')
-      .doc(id)
-      .collection("messages")
-      .orderBy('timestamp', 'asc')
-  )
-  const [recipientSnapshot] = useCollection(
+  const [limit, setLimit] = React.useState(5)
+  const friendEmail = getRecipientEmail(chat.users, userCtx.email)
+  const messageRef = db
+    .collection('chats')
+    .doc(id)
+    .collection("messages")
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+    
+  const [messagesSnapshot, loadingMessages] = useCollection(messageRef)
+  const [recipientSnapshot, loading] = useCollection(
     db
       .collection('users')
-      .where("email", "==", getRecipientEmail(chat.users, userCtx.email))
+      .where("email", "==", friendEmail)
   )
 
   const recipient = recipientSnapshot?.docs?.[0]?.data()
@@ -114,22 +116,28 @@ export default function ChatPage({ chat, messages }) {
   }
 
   const handleSendMessage = (e) => {
-    // e.preventDefault()
+    if (input.trim().length >= 1) {
+      // update last seen
+      db.collection('users').doc(userCtx.uid).set({
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true })
 
-    // update last seen
-    db.collection('users').doc(userCtx.uid).set({
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true })
+      // send message
+      db.collection('chats').doc(id).collection('messages').add({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        message: input,
+        user: userCtx.email,
+        photoUrl: userCtx.photoUrl
+      })
 
-    // send message
-    db.collection('chats').doc(id).collection('messages').add({
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      message: input,
-      user: userCtx.email,
-      photoUrl: userCtx.photoUrl
-    })
+      //updates latest infos of chat
+      db.collection('chats').doc(id).set({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        lastMessage: input,
+      }, { merge: true })
 
-    setInput("")
+      setInput("")
+    }
   }
 
 
@@ -142,30 +150,52 @@ export default function ChatPage({ chat, messages }) {
   };
 
   const scrollToBottom = () => {
-
+    messageEnd.current.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const loadMoreMessage = () => {
+    setLimit(limit + 5)
+  }
+
+  window.onscroll = function () {
+    if (window.pageYOffset === 0) {
+      if (messagesSnapshot?.docs.length >= limit)
+        loadMoreMessage()
+    }
+  };
+
   useEffect(() => {
-    messageEnd.current.scrollIntoView({ behavior: 'smooth' })
+    scrollToBottom()
   }, [messagesSnapshot])
 
+  useEffect(() => {
+    setLimit(5)
+  }, [chat.id])
+
   return (
-    <div className={classes.root}>
+    <div>
       <Head>
         <title>
-          Home
+          {`Conversando com ${friendEmail}`}
         </title>
-        <meta description="Home page with some instructions" name="Home page" />
+        <meta description={`Chat page with ${friendEmail}`} name="Chat page" />
       </Head>
       <CssBaseline />
-      <ChatAppBar handleDrawerOpen={handleDrawerOpen} friendData={recipient} />
+      <ChatAppBar handleDrawerOpen={handleDrawerOpen} friendData={recipient} loading={loading} />
       <DrawerChat open={open} handleDrawerClose={handleDrawerClose} />
       <main className={classes.content}>
         <div className={classes.toolbar} />
         <div className={classes.chatLayout}>
           <ChatList>
-            {showMessages()}
-            <div ref={messageEnd}/>
+            <div ref={messageEnd} />
+            {
+              loadingMessages ?
+                <div className={classes.loading}>
+                  <ThreeBounce size={15} color='green' />
+                </div>
+                :
+                showMessages()
+            }
           </ChatList>
           <ChatInputNormal
             value={input}
@@ -199,10 +229,8 @@ export async function getServerSideProps(context) {
   const chatRes = await ref.get()
   const chat = {
     id: chatRes.id,
-    ...chatRes.data()
+    users: chatRes.data().users
   }
-
-  console.log(chat, messages)
 
   return {
     props: {
