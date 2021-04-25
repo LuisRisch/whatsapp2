@@ -18,7 +18,7 @@ import FormDialog from '../dialogs/find-friends-dialog';
 import SignOutDialog from '../dialogs/sign-out-dialog';
 import TimeAgo from 'timeago-react'
 import Skeleton from '@material-ui/lab/Skeleton';
-import { useWindowSize } from '../../helpers/get-window-size'
+import { useWindowSize } from '../../helpers/handle-window-size'
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
