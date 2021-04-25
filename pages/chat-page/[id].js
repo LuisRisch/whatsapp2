@@ -15,6 +15,7 @@ import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
 import { ThreeBounce } from 'better-react-spinkit'
+import UseWindowScrollTop, { useWindowScrollTop } from '../../helpers/handle-window-scroll'
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {
@@ -48,7 +49,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function ChatPage({ chat, messages }) {
-  console.log(chat)
+  const top = useWindowScrollTop()
   const classes = useStyles()
   const router = useRouter()
   const id = router.query.id
@@ -64,7 +65,7 @@ export default function ChatPage({ chat, messages }) {
     .collection("messages")
     .orderBy('timestamp', 'desc')
     .limit(limit)
-    
+
   const [messagesSnapshot, loadingMessages] = useCollection(messageRef)
   const [recipientSnapshot, loading] = useCollection(
     db
@@ -157,12 +158,11 @@ export default function ChatPage({ chat, messages }) {
     setLimit(limit + 5)
   }
 
-  window.onscroll = function () {
-    if (window.pageYOffset === 0) {
+  useEffect(() => {
+    if (top)
       if (messagesSnapshot?.docs.length >= limit)
         loadMoreMessage()
-    }
-  };
+  }, [top])
 
   useEffect(() => {
     scrollToBottom()
