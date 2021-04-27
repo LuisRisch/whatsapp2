@@ -33,6 +33,13 @@ const useStyles = makeStyles((theme) => ({
     color: "rgba(241, 241, 242, 0.95)",
     fontWeight: "lighter",
     textAlign: "center"
+  },
+  middle:{
+    height: '100%',
+    width: '100%',
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
   }
 }));
 
@@ -61,16 +68,18 @@ export default function MiniDrawer() {
       <DrawerChat open={open} handleDrawerClose={handleDrawerClose} />
       <main className={classes.content}>
         <div className={classes.toolbar} />
-        <Grid container direction="column" justify="center" alignItems="center" spacing={4}>
-          <Grid item xs={12}>
-            <Image src="/images/group.svg" alt="Svg image" height={300} width={300} />
-          </Grid>
-          <Grid item xs={12}>
-            <h1 className={classes.title}>
-              Start chatting NOW with your friends!
+        <div className={classes.middle}>
+          <Grid container direction="column" justify="center" alignItems="center" spacing={4}>
+            <Grid item xs={12}>
+              <Image src="/images/group.svg" alt="Svg image" height={300} width={300} />
+            </Grid>
+            <Grid item xs={12}>
+              <h1 className={classes.title}>
+                Start chatting NOW with your friends!
             </h1>
+            </Grid>
           </Grid>
-        </Grid>
+        </div>
       </main>
     </div>
   );

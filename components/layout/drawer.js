@@ -26,10 +26,16 @@ const useStyles = makeStyles({
     height: "100%",
     minHeight: "100vh",
     overflowY: "scroll",
+    overflowX: "hidden",
   },
   textPrimary: {
     color: "rgba(241, 241, 242, 0.92)",
     fontSize: 16,
+  },
+  textSecondary: {
+    color: "rgba(241, 241, 242, 0.63)",
+    textAlign: 'center',
+    fontSize: 14,
   },
   listItem: {
     borderBottom: "1px solid #30383d"
@@ -62,21 +68,30 @@ export default function TemporaryDrawer(props) {
               <ChatIcon className={classes.icon} />
             </Grid>
             <Grid item>
-              <Typography type="body2" className={classes.textPrimary}>Conversas</Typography>
+              <Typography type="body2" className={classes.textPrimary}>
+                Conversas
+              </Typography>
             </Grid>
           </Grid>
         </ListItem>
         {
-          chatsSnapshot?.docs.map((chat) => (
-            <Chat
-              key={chat.id}
-              id={chat.id}
-              friendEmail={getRecipientEmail(chat.data().users, userCtx.email)}
-              lastMessage={chat.data().lastMessage}
-              timestamp={chat.data().timestamp?.toDate().getTime()}
-              handleClickFriend={handleClickFriend}
-            />
-          ))
+          chatsSnapshot?.docs.length === 0 ?
+            <ListItem className={classes.listItem}>
+              <Typography type="body2" className={classes.textSecondary}>
+                Você não possui nenhuma conversa ainda
+              </Typography>
+            </ListItem>
+            :
+            chatsSnapshot?.docs.map((chat) => (
+              <Chat
+                key={chat.id}
+                id={chat.id}
+                friendEmail={getRecipientEmail(chat.data().users, userCtx.email)}
+                lastMessage={chat.data().lastMessage}
+                timestamp={chat.data().timestamp?.toDate().getTime()}
+                handleClickFriend={handleClickFriend}
+              />
+            ))
         }
         <ListItem className={classes.listItem}>
           <Grid container direction='row' alignItems='center' justify='center' spacing={2}>
@@ -87,6 +102,11 @@ export default function TemporaryDrawer(props) {
               <Typography type="body2" className={classes.textPrimary}>Grupos</Typography>
             </Grid>
           </Grid>
+        </ListItem>
+        <ListItem className={classes.listItem}>
+          <Typography type="body2" className={classes.textSecondary}>
+            Você não possui nenhum grupo ainda
+          </Typography>
         </ListItem>
 
       </List>
