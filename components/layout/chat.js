@@ -8,7 +8,6 @@ import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config';
 import Skeleton from '@material-ui/lab/Skeleton';
 import TimeAgo from 'timeago-react'
-import Grid from '@material-ui/core/Grid'
 
 const useStyles = makeStyles({
   textPrimary: {

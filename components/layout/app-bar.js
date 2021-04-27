@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { makeStyles } from '@material-ui/core/styles';
 import { db } from '../../firebase-config/firebase-config'
 import { useCollection } from 'react-firebase-hooks/firestore'
+import { useWindowSize } from '../../helpers/handle-window-size'
 import UserContext from '../../store/user-context'
 import AppBar from '@material-ui/core/AppBar';
 import Typography from '@material-ui/core/Typography';
@@ -18,7 +19,8 @@ import FormDialog from '../dialogs/find-friends-dialog';
 import SignOutDialog from '../dialogs/sign-out-dialog';
 import TimeAgo from 'timeago-react'
 import Skeleton from '@material-ui/lab/Skeleton';
-import { useWindowSize } from '../../helpers/handle-window-size'
+import DropDown from './drop-down'
+import CreateGroupDialog from '../dialogs/create-group-dialog'
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
@@ -56,7 +58,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function ChatAppBar(props) {
+export default function ChatAppBar({ friendData, handleDrawerOpen, loading }) {
   const windowSize = useWindowSize()
   const classes = useStyles()
   const userCtx = useContext(UserContext)
@@ -64,22 +66,48 @@ export default function ChatAppBar(props) {
   const userChatRef = db.collection('chats').where('users', 'array-contains', userCtx.email)
   const [chatsSnapshot] = useCollection(userChatRef)
   const [textWidth, setTextWidth] = useState(80)
-  const [open, setOpen] = useState(false)
+  const [openFindFriendModal, setOpenFindFriendModal] = useState(false)
   const [openSignOutModal, setOpenSignOutModal] = useState(false)
+  const [openCreateGroupDialog, setOpenCreateGroupDialog] = useState(false)
   const [email, setEmail] = useState("")
+  const [anchorEl, setAnchorEl] = useState(null);
   const [errorInEmail, setErrorInEmail] = useState({
     error: false,
     text: ""
   })
 
-  const { friendData, handleDrawerOpen, loading } = props
-
-  function handleOpen() {
-    setOpen(true)
+  function handleOpenPopUp(event) {
+    setAnchorEl(event.currentTarget);
   }
 
-  function handleClose() {
-    setOpen(false)
+  function handleClosePopUp() {
+    setAnchorEl(null);
+  };
+
+  function handleOpenCreateGroupDialog() {
+    setOpenCreateGroupDialog(true)
+  }
+
+  function handleCloseCreateGroupDialog() {
+    setOpenCreateGroupDialog(false)
+  }
+
+  function handleStartNewChat() {
+    handleOpenFindFriendModal()
+    handleClosePopUp()
+  }
+
+  function handleStartNewGroup() {
+    handleClosePopUp()
+    handleOpenCreateGroupDialog()
+  }
+
+  function handleOpenFindFriendModal() {
+    setOpenFindFriendModal(true)
+  }
+
+  function handleCloseFindFriendDialog() {
+    setOpenFindFriendModal(false)
     setErrorInEmail({
       error: false,
       text: "",
@@ -112,7 +140,7 @@ export default function ChatAppBar(props) {
       db.collection('chats').add({
         users: [userCtx.email, email]
       })
-      setOpen(false)
+      setOpenFindFriendModal(false)
     }
     else {
       setErrorInEmail({
@@ -149,15 +177,19 @@ export default function ChatAppBar(props) {
     <AppBar
       position="fixed"
       className={classes.appBar}
-    >
+    > 
+      <CreateGroupDialog
+        open={openCreateGroupDialog}
+        handleClose={handleCloseCreateGroupDialog}
+      />
       <FormDialog
         title="Procure novos amigos!"
         content="Digite o gmail do seu amigo e adicione em sua lista"
         btnLabel1="Adicionar"
         btnLabel2="Cancelar"
         btnFunc1={handleAddFriend}
-        btnFunc2={handleClose}
-        open={open}
+        btnFunc2={handleCloseFindFriendDialog}
+        open={openFindFriendModal}
         onChange={handleEmailInput}
         value={email}
         error={errorInEmail.error}
@@ -189,11 +221,17 @@ export default function ChatAppBar(props) {
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
-                onClick={handleOpen}
+                onClick={handleOpenPopUp}
               >
                 <SearchIcon className={classes.icon} />
               </IconButton>
             </Grid>
+            <DropDown
+              handleClose={handleClosePopUp}
+              anchorEl={anchorEl}
+              handleStartNewChat={handleStartNewChat}
+              handleStartNewGroup={handleStartNewGroup}
+            />
             <div className={classes.sizedBox} />
             <Grid item>
               {

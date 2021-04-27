@@ -168,14 +168,6 @@ export default function ChatPage({ chat, messages }) {
   }, [top])
 
   useEffect(() => {
-    if (performance.navigation.type == performance.navigation.TYPE_RELOAD) {
-      console.info("This page is reloaded");
-    } else {
-      console.info("This page is not reloaded");
-    }
-  }, [window.performance])
-
-  useEffect(() => {
     scrollToBottom()
   }, [messagesSnapshot])
 
