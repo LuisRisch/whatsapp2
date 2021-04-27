@@ -15,7 +15,7 @@ import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
 import { ThreeBounce } from 'better-react-spinkit'
-import UseWindowScrollTop, { useWindowScrollTop } from '../../helpers/handle-window-scroll'
+import { useWindowScrollTop } from '../../helpers/handle-window-scroll'
 
 const useStyles = makeStyles((theme) => ({
   toolbar: {
@@ -38,6 +38,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20
   },
   loading: {
     height: "100vh",
@@ -117,6 +118,8 @@ export default function ChatPage({ chat, messages }) {
   }
 
   const handleSendMessage = (e) => {
+    e.preventDefault()
+
     if (input.trim().length >= 1) {
       // update last seen
       db.collection('users').doc(userCtx.uid).set({
@@ -163,6 +166,14 @@ export default function ChatPage({ chat, messages }) {
       if (messagesSnapshot?.docs.length >= limit)
         loadMoreMessage()
   }, [top])
+
+  useEffect(() => {
+    if (performance.navigation.type == performance.navigation.TYPE_RELOAD) {
+      console.info("This page is reloaded");
+    } else {
+      console.info("This page is not reloaded");
+    }
+  }, [window.performance])
 
   useEffect(() => {
     scrollToBottom()

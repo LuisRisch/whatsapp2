@@ -5,7 +5,7 @@ import moment from 'moment'
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    margin: "25px 0",
+    margin: "10px 0",
   },
   paper: {
     backgroundColor: "#2a2f32",

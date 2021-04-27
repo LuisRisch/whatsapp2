@@ -15,6 +15,9 @@ const useStyles = makeStyles((theme) => ({
   messageInput: {
     paddingTop: theme.spacing(0.6),
     backgroundColor: "#1e2428",
+    display: 'flex',
+    padding: '5px 10px',
+    alignItems: 'center'
   },
   icon: {
     fill: "#828689",
@@ -23,16 +26,14 @@ const useStyles = makeStyles((theme) => ({
   },
   input: {
     color: "#f1f1f2",
-    padding: "9px 12px 11px",
     backgroundColor: "#33383b",
     border: "1px solid #33383b",
     borderRadius: "21px",
-    width: "100%",
-    minHeight: "20px",
-    fontSize: "15px",
-    fontWeight: "400",
-    lineHeight: "20px",
-    outline: "none",
+    padding: '10px',
+    width: '100%',
+    outline: 'none',
+    fontSize: '16px',
+    height: 50,
   }
 }));
 
@@ -41,37 +42,32 @@ export default function ChatInputNormal(props) {
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') {
-      props.onSubmitMessage()
+      props.onSubmitMessage(e)
     }
   }
 
   return (
-    <div className={classes.messageInputWrapper}>
+    <form className={classes.messageInputWrapper}>
       <Paper className={classes.messageInput} elevation={6}>
-        <Grid container direction="row" justify="space-between" alignItems="center">
-          <Grid item>
-            <IconButton>
-              <SentimentVerySatisfiedIcon className={classes.icon} />
-            </IconButton>
-          </Grid>
-          <Grid item md={10} xs={8} >
-            <textarea
-              rows="1"
-              placeholder="Digite..."
-              className={classes.input}
-              onChange={props.onChange}
-              value={props.value}
-              onKeyDown={handleKeyDown}
-              ref={input => input && input.focus()}
-            />
-          </Grid>
-          <Grid item>
-            <IconButton onClick={props.onSubmitMessage}>
-              <SendIcon className={classes.icon} />
-            </IconButton>
-          </Grid>
-        </Grid>
+        <div style={{ display: 'flex', flex: 1 }}>
+          <textarea
+            placeholder="Digite..."
+            className={classes.input}
+            onChange={props.onChange}
+            value={props.value}
+            onKeyDown={handleKeyDown}
+            ref={input => input && input.focus()}
+          />
+        </div>
+        <div>
+          <IconButton onClick={props.onSubmitMessage}>
+            <SendIcon className={classes.icon} />
+          </IconButton>
+        </div>
       </Paper>
-    </div>
+    </form>
   )
 }
+
+
+

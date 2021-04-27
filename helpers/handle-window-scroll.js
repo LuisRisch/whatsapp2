@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { set } from 'date-fns';
 
 export function useWindowScrollTop() {
   // Initialize state with undefined scroll so server and client renders match
@@ -9,7 +8,7 @@ export function useWindowScrollTop() {
   useEffect(() => {
     // only execute all the code below in client side
     if (typeof window !== 'undefined') {
-      // Handler to call on window scroll
+      // Handler to call on window resize
       function handleScroll() {
         if (window.pageYOffset === 0) {
           setTop(true)
@@ -21,7 +20,7 @@ export function useWindowScrollTop() {
       window.addEventListener("scroll", handleScroll);
 
 
-      // Call handler right away so state gets updated with initial window scroll
+      // Call handler right away so state gets updated with initial window size
       handleScroll();
 
       // Remove event listener on cleanup
