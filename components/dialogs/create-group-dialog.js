@@ -9,21 +9,25 @@ import Avatar from '@material-ui/core/Avatar'
 import AddAPhotoIcon from '@material-ui/icons/AddAPhoto';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import Skeleton from '@material-ui/lab/Skeleton';
+import AvatarGroup from '@material-ui/lab/AvatarGroup';
 import { makeStyles } from '@material-ui/core/styles';
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config'
+import { useWindowSize } from '../../helpers/handle-window-size'
 
 const useStyles = makeStyles((theme) => ({
   large: {
     width: theme.spacing(12),
     height: theme.spacing(12),
+  },
+  small: {
+    width: theme.spacing(4),
+    height: theme.spacing(4),
   },
   fullWidth: {
     width: '100%'
@@ -31,41 +35,96 @@ const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
     backgroundColor: theme.palette.background.paper,
-    overflowY: "scroll",
   },
-  alignTextCenter: {
+  alignCenter: {
     textAlign: 'center'
-  }
+  },
+  userList: {
+    height: 300,
+    overflowY: 'scroll'
+  },
+  textPrimary: {
+    fontSize: 16,
+    width: 180,
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+  },
 }));
 
 export default function AlertDialog({ open, handleClose }) {
   const classes = useStyles()
-  const usersRef = db.collection('users')
-  const [usersSnapshot, loading] = useCollection(usersRef)
-  const [checked, setChecked] = React.useState([]);
+  const windowSize = useWindowSize()
+  const [checkedFriends, setCheckedFriends] = React.useState([]);
+  const [selectedFriendsArray, setSelectedFriendArray] = React.useState([]);
+  const [limit, setLimit] = React.useState(5)
+  const usersRef = db.collection('users').orderBy('email', 'asc')
+  const [usersSnapshot, loading] = useCollection(usersRef.limit(limit))
 
   const handleToggle = (value) => () => {
-    const currentIndex = checked.indexOf(value);
-    const newChecked = [...checked];
+    const currentIndex = checkedFriends.indexOf(value);
+    const newCheckedFriends = [...checkedFriends];
+    const newSelectedFriends = [...selectedFriendsArray];
 
     if (currentIndex === -1) {
-      newChecked.push(value);
+      newCheckedFriends.push(value);
+      newSelectedFriends.push({
+        email: usersSnapshot?.docs[value].data().email,
+        photoURL: usersSnapshot?.docs[value].data().photoURL
+      });
     } else {
-      newChecked.splice(currentIndex, 1);
+      newCheckedFriends.splice(currentIndex, 1);
+      newSelectedFriends.splice(currentIndex, 1);
     }
-
-    setChecked(newChecked);
+    console.log(newSelectedFriends)
+    setCheckedFriends(newCheckedFriends);
+    setSelectedFriendArray(newSelectedFriends)
   };
 
+  function loadMoreFriend() {
+    if (usersSnapshot?.docs.length >= limit)
+      setLimit(limit + 5)
+  }
+
+  function handleCloseDialog() {
+    handleClose()
+    setLimit(5)
+  }
+
+  function handleCreateGroup() {
+    handleClose()
+  }
+
+  function handleTextWidth() {
+    if (windowSize.width >= 900)
+      return (400)
+    else if (windowSize.width >= 600)
+      return (300)
+    else if (windowSize.width >= 352)
+      return (170)
+    else
+      return (130)
+  }
+
+  function handleQntAvatars() {
+    if (windowSize.width >= 900)
+      return (10)
+    else if (windowSize.width >= 600)
+      return (8)
+    else if (windowSize.width >= 352)
+      return (5)
+    else
+      return (4)
+  }
+
   useEffect(() => {
-    console.log(checked)
-  }, [checked])
+
+  }, [windowSize])
 
   return (
     <div>
       <Dialog
         fullWidth
-        maxWidth='sm'
         open={open}
         onClose={handleClose}
         aria-labelledby="alert-dialog-title"
@@ -89,54 +148,78 @@ export default function AlertDialog({ open, handleClose }) {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} className={classes.root}>
-              <Typography variant='h6' className={classes.alignTextCenter}>
-                Selecione os usuário para o seu grupo
-              </Typography>
-              <List dense>
-                {usersSnapshot?.docs.map((user, index) => {
-                  const userData = user.data()
-                  return !loading ?
-                    <ListItem key={userData.email} button onClick={handleToggle(index)}>
-                      <ListItemAvatar>
-                        <Avatar
-                          alt={`${userData.email} avatar`}
-                          src={userData.photoURL}
-                        />
-                      </ListItemAvatar>
-                      <ListItemText primary={userData.email} />
-                      <ListItemSecondaryAction>
-                        <Checkbox
-                          edge="end"
-                          checked={checked.indexOf(index) !== -1}
-                          onChange={handleToggle(index)}
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    :
-                    <ListItem key={userData.email} button onClick={handleToggle(index)}>
-                      <ListItemAvatar>
-                        <Skeleton animation="wave" variant="circle">
-                          <Avatar />
-                        </Skeleton>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Skeleton animation="wave" variant="text" height={18} width={90}>
-                          </Skeleton>
-                        }
-                      />
-                    </ListItem>
-                })}
-              </List>
+            <Grid item >
+              <Grid container direction='column' justify='flex-start' alignItems='center' spacing={3}>
+                <Grid item>
+                  <Typography variant='h6' className={classes.alignCenter}>
+                    Selecione os usuário para o seu grupo
+                  </Typography>
+                </Grid>
+                <Grid item>
+                  {
+                    selectedFriendsArray &&
+                    <AvatarGroup max={handleQntAvatars()}>
+                      {selectedFriendsArray.map((selectedFriend) => {
+                        return <Avatar alt={selectedFriend.email} src={selectedFriend.photoURL} key={selectedFriend.email} />
+                      })}
+                    </AvatarGroup>
+                  }
+
+                </Grid>
+                <Grid item>
+                  <div className={classes.userList}>
+                    <List dense>
+                      {usersSnapshot?.docs.map((user, index) => {
+                        const userData = user.data()
+                        return !loading ?
+                          <ListItem key={userData.email} button onClick={handleToggle(index)}>
+                            <ListItemAvatar>
+                              <Avatar
+                                className={classes.small}
+                                alt={`${userData.email} avatar`}
+                                src={userData.photoURL}
+                              />
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <p className={classes.textPrimary} style={{ width: handleTextWidth() }}>
+                                  {userData.email}
+                                </p>
+                              }
+                            />
+                          </ListItem>
+                          :
+                          <ListItem key={userData.email}>
+                            <ListItemAvatar>
+                              <Skeleton animation="wave" variant="circle">
+                                <Avatar
+                                  className={classes.small}
+                                />
+                              </Skeleton>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Skeleton animation="wave" variant="text" height={18} width={90}>
+                                </Skeleton>
+                              }
+                            />
+                          </ListItem>
+                      })}
+                      <button onClick={loadMoreFriend}>
+                        Load
+                  </button>
+                    </List>
+                  </div>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button onClick={handleCloseDialog} color="primary">
             Cancelar
           </Button>
-          <Button onClick={handleClose} color="primary" autoFocus>
+          <Button onClick={handleCreateGroup} color="primary" autoFocus>
             Criar
           </Button>
         </DialogActions>
