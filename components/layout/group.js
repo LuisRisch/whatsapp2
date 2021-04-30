@@ -4,9 +4,6 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
 import Avatar from '@material-ui/core/Avatar';
 import { makeStyles } from '@material-ui/core/styles';
-import { useCollection } from 'react-firebase-hooks/firestore'
-import { db } from '../../firebase-config/firebase-config';
-import Skeleton from '@material-ui/lab/Skeleton';
 import TimeAgo from 'timeago-react'
 
 const useStyles = makeStyles({
@@ -40,11 +37,7 @@ const useStyles = makeStyles({
 });
 
 export default function Chat(props) {
-  const { id, friendEmail, handleClickFriend, lastMessage, timestamp } = props
-  const [recipientSnapshot, loading] = useCollection(
-    db.collection('users').where('email', '==', friendEmail)
-  )
-  const recipient = recipientSnapshot?.docs?.[0]?.data()
+  const { id, handleClickFriend, lastMessage, timestamp, groupName, groupPhoto } = props
   const classes = useStyles()
 
   return (
@@ -54,25 +47,16 @@ export default function Chat(props) {
       className={classes.list}
       onClick={() => handleClickFriend(id)}
     >
-      {
-        loading ?
-          <ListItemIcon>
-            <Skeleton animation="wave" variant="circle">
-              <Avatar />
-            </Skeleton>
-          </ListItemIcon>
-          :
-          <ListItemIcon>
-            {
-              recipient ?
-                <Avatar src={recipient?.photoURL} />
-                :
-                <Avatar />
-            }
-          </ListItemIcon>
-      }
+      <ListItemIcon>
+        {
+          groupPhoto ?
+            <Avatar src={groupPhoto} />
+            :
+            <Avatar />
+        }
+      </ListItemIcon>
       <ListItemText
-        primary={<Typography type="body2" className={classes.textPrimary}>{friendEmail}</Typography>}
+        primary={<Typography type="body2" className={classes.textPrimary}>{groupName}</Typography>}
         secondary={
           <>
             {

@@ -2,7 +2,6 @@ import { useState, useContext, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { makeStyles } from '@material-ui/core/styles';
 import { db } from '../../firebase-config/firebase-config'
-import { useCollection } from 'react-firebase-hooks/firestore'
 import { useWindowSize } from '../../helpers/handle-window-size'
 import UserContext from '../../store/user-context'
 import AppBar from '@material-ui/core/AppBar';
@@ -17,8 +16,6 @@ import Grid from '@material-ui/core/Grid';
 import SearchIcon from '@material-ui/icons/Search';
 import FormDialog from '../dialogs/find-friends-dialog';
 import SignOutDialog from '../dialogs/sign-out-dialog';
-import TimeAgo from 'timeago-react'
-import Skeleton from '@material-ui/lab/Skeleton';
 import DropDown from './drop-down'
 import CreateGroupDialog from '../dialogs/create-group-dialog'
 
@@ -58,13 +55,11 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function ChatAppBar({ friendData, handleDrawerOpen, loading }) {
+export default function ChatAppBar({ groupName, handleDrawerOpen, groupPhoto, groupFriends }) {
   const windowSize = useWindowSize()
   const classes = useStyles()
   const userCtx = useContext(UserContext)
   const router = useRouter()
-  const userChatRef = db.collection('chats').where('users', 'array-contains', userCtx.email)
-  const [chatsSnapshot] = useCollection(userChatRef)
   const [textWidth, setTextWidth] = useState(80)
   const [openFindFriendModal, setOpenFindFriendModal] = useState(false)
   const [openSignOutModal, setOpenSignOutModal] = useState(false)
@@ -177,7 +172,7 @@ export default function ChatAppBar({ friendData, handleDrawerOpen, loading }) {
     <AppBar
       position="fixed"
       className={classes.appBar}
-    > 
+    >
       <CreateGroupDialog
         open={openCreateGroupDialog}
         handleClose={handleCloseCreateGroupDialog}
@@ -234,65 +229,30 @@ export default function ChatAppBar({ friendData, handleDrawerOpen, loading }) {
             />
             <div className={classes.sizedBox} />
             <Grid item>
-              {
-                loading ?
-                  <ListItem>
-                    <ListItemAvatar>
-                      <Skeleton animation="wave" variant="circle">
-                        <Avatar />
-                      </Skeleton>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary=
-                      {
-                        <Skeleton animation="wave" variant="text" height={18} width={90}>
-                        </Skeleton>
-                      }
-                      secondary=
-                      {
-                        <Skeleton animation="wave" variant="text" height={18} width={90}>
-                        </Skeleton>
-                      }
-                    />
-                  </ListItem>
-                  :
-                  <ListItem>
-                    <ListItemAvatar>
-                      {
-                        friendData ?
-                          <Avatar src={friendData.photoURL} />
-                          :
-                          <Avatar />
-                      }
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary=
-                      {
-                        friendData ?
-                          <Typography type="body2" className={classes.textPrimary} style={{ width: textWidth }}>
-                            {friendData.email}
-                          </Typography>
-                          :
-                          <Typography type="body2" className={classes.textPrimary} style={{ width: textWidth }}>
-                            Indisponível
-                      </Typography>
-                      }
-
-                      secondary=
-                      {
-                        friendData?.lastSeen?.toDate() ? (
-                          <Typography type="body2" className={classes.textSecondary} style={{ width: textWidth }}>
-                            <TimeAgo datetime={friendData?.lastSeen?.toDate()} style={{ width: textWidth }} />
-                          </Typography>
-                        )
-                          :
-                          <Typography type="body2" className={classes.textSecondary} style={{ width: textWidth }}>
-                            Indisponível
-                          </Typography>
-                      }
-                    />
-                  </ListItem>
-              }
+              <ListItem>
+                <ListItemAvatar>
+                  {
+                    groupPhoto ?
+                      <Avatar src={groupPhoto} />
+                      :
+                      <Avatar />
+                  }
+                </ListItemAvatar>
+                <ListItemText
+                  primary=
+                  {
+                    <Typography type="body2" className={classes.textPrimary} style={{ width: textWidth }}>
+                      {groupName}
+                    </Typography>
+                  }
+                  secondary=
+                  {
+                    <Typography type="body2" className={classes.textSecondary} style={{ width: textWidth }}>
+                      {groupFriends.toString()}
+                    </Typography>
+                  }
+                />
+              </ListItem>
             </Grid>
           </Grid>
         </Grid>

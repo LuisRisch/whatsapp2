@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import ChatAppBar from '../../components/layout/app-bar'
+import GroupAppBar from '../../components/layout/group-app-bar'
 import DrawerChat from '../../components/layout/drawer'
-import Head from 'next/head'
 import { useRouter } from 'next/router'
 import ChatInputNormal from '../../components/chat-page/chat-input-normal'
 import ChatList from '../../components/chat-page/chat-list'
@@ -13,7 +12,6 @@ import UserContext from '../../store/user-context'
 import firebase from 'firebase'
 import MyMessage from '../../components/chat-page/my-message'
 import FriendMessage from '../../components/chat-page/friend-message'
-import { getRecipientEmail } from '../../helpers/get-recipient-email'
 import { ThreeBounce } from 'better-react-spinkit'
 import { useWindowScrollTop } from '../../helpers/handle-window-scroll'
 
@@ -59,22 +57,14 @@ export default function ChatPage({ chat, messages }) {
   const messageEnd = React.useRef(null)
   const [input, setInput] = React.useState("")
   const [limit, setLimit] = React.useState(5)
-  const friendEmail = getRecipientEmail(chat.users, userCtx.email)
   const messageRef = db
-    .collection('chats')
+    .collection('groups')
     .doc(id)
     .collection("messages")
     .orderBy('timestamp', 'desc')
     .limit(limit)
 
   const [messagesSnapshot, loadingMessages] = useCollection(messageRef)
-  const [recipientSnapshot, loading] = useCollection(
-    db
-      .collection('users')
-      .where("email", "==", friendEmail)
-  )
-
-  const recipient = recipientSnapshot?.docs?.[0]?.data()
 
   const showMessages = () => {
     if (messagesSnapshot) {
@@ -121,13 +111,13 @@ export default function ChatPage({ chat, messages }) {
     e.preventDefault()
 
     if (input.trim().length >= 1) {
-      // update last seen
+      // update last seen 
       db.collection('users').doc(userCtx.uid).set({
         lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
       }, { merge: true })
 
       // send message
-      db.collection('chats').doc(id).collection('messages').add({
+      db.collection('groups').doc(id).collection('messages').add({
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         message: input,
         user: userCtx.email,
@@ -135,7 +125,7 @@ export default function ChatPage({ chat, messages }) {
       })
 
       //updates latest infos of chat
-      db.collection('chats').doc(id).set({
+      db.collection('groups').doc(id).set({
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         lastMessage: input,
       }, { merge: true })
@@ -143,7 +133,6 @@ export default function ChatPage({ chat, messages }) {
       setInput("")
     }
   }
-
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -177,14 +166,13 @@ export default function ChatPage({ chat, messages }) {
 
   return (
     <div>
-      <Head>
-        <title>
-          {`Conversando com ${friendEmail}`}
-        </title>
-        <meta description={`Chat page with ${friendEmail}`} name="Chat page" />
-      </Head>
       <CssBaseline />
-      <ChatAppBar handleDrawerOpen={handleDrawerOpen} friendData={recipient} loading={loading} />
+      <GroupAppBar
+        handleDrawerOpen={handleDrawerOpen}
+        groupName={chat.groupName}
+        groupPhoto={chat.groupPhoto}
+        groupFriends={chat.users}
+      />
       <DrawerChat open={open} handleDrawerClose={handleDrawerClose} />
       <main className={classes.content}>
         <div className={classes.toolbar} />
@@ -212,7 +200,7 @@ export default function ChatPage({ chat, messages }) {
 }
 
 export async function getServerSideProps(context) {
-  const ref = db.collection('chats').doc(context.query.id)
+  const ref = db.collection('groups').doc(context.query.id)
 
   const messagesRes = await ref
     .collection("messages")
@@ -232,7 +220,9 @@ export async function getServerSideProps(context) {
   const chatRes = await ref.get()
   const chat = {
     id: chatRes.id,
-    users: chatRes.data().users
+    users: chatRes.data().users,
+    groupName: chatRes.data().groupName,
+    groupPhoto: chatRes.data().groupPhoto,
   }
 
   return {

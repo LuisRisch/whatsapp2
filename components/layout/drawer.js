@@ -7,6 +7,7 @@ import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../../firebase-config/firebase-config'
 import UserContext from '../../store/user-context'
 import Chat from './chat'
+import Group from './group'
 import { getRecipientEmail } from '../../helpers/get-recipient-email'
 import ListItem from '@material-ui/core/ListItem'
 import Typography from '@material-ui/core/Typography'
@@ -48,13 +49,20 @@ const useStyles = makeStyles({
 export default function TemporaryDrawer(props) {
   const userCtx = useContext(UserContext)
   const userChatRef = db.collection('chats').where('users', 'array-contains', userCtx.email)
+  const userGroupsRef = db.collection('groups').where('users', 'array-contains', userCtx.email)
   const [chatsSnapshot] = useCollection(userChatRef)
+  const [groupsSnapshot] = useCollection(userGroupsRef)
   const classes = useStyles();
   const router = useRouter();
 
   function handleClickFriend(id) {
     props.handleDrawerClose()
     router.push(`/chat-page/${id}`)
+  }
+
+  function handleClickGroup(id) {
+    props.handleDrawerClose()
+    router.push(`/group-page/${id}`)
   }
 
   const list = () => (
@@ -103,11 +111,26 @@ export default function TemporaryDrawer(props) {
             </Grid>
           </Grid>
         </ListItem>
-        <ListItem className={classes.listItem}>
-          <Typography type="body2" className={classes.textSecondary}>
-            Você não possui nenhum grupo ainda
-          </Typography>
-        </ListItem>
+        {
+          groupsSnapshot?.docs.length === 0 ?
+            <ListItem className={classes.listItem}>
+              <Typography type="body2" className={classes.textSecondary}>
+                Você não possui nenhum grupo ainda
+              </Typography>
+            </ListItem>
+            :
+            groupsSnapshot?.docs.map((group) => (
+              <Group
+                key={group.id}
+                id={group.id}
+                groupName={group.data().groupName}
+                groupPhoto={group.data().groupPhoto}
+                lastMessage={group.data().lastMessage}
+                timestamp={group.data().timestamp?.toDate().getTime()}
+                handleClickFriend={handleClickGroup}
+              />
+            ))
+        }
 
       </List>
     </div>
