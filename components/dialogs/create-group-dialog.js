@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -16,9 +16,10 @@ import Typography from '@material-ui/core/Typography';
 import Skeleton from '@material-ui/lab/Skeleton';
 import AvatarGroup from '@material-ui/lab/AvatarGroup';
 import { makeStyles } from '@material-ui/core/styles';
-import { useCollection } from 'react-firebase-hooks/firestore'
-import { db } from '../../firebase-config/firebase-config'
-import { useWindowSize } from '../../helpers/handle-window-size'
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { db, storage } from '../../firebase-config/firebase-config';
+import { useWindowSize } from '../../helpers/handle-window-size';
+import UserContext from '../../store/user-context'
 
 const useStyles = makeStyles((theme) => ({
   large: {
@@ -32,6 +33,10 @@ const useStyles = makeStyles((theme) => ({
   fullWidth: {
     width: '100%'
   },
+  loadButton: {
+    width: '100%',
+    marginTop: '1em',
+  },
   root: {
     width: '100%',
     backgroundColor: theme.palette.background.paper,
@@ -40,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'center'
   },
   userList: {
-    height: 300,
+    height: 200,
     overflowY: 'scroll'
   },
   textPrimary: {
@@ -55,9 +60,13 @@ const useStyles = makeStyles((theme) => ({
 export default function AlertDialog({ open, handleClose }) {
   const classes = useStyles()
   const windowSize = useWindowSize()
-  const [checkedFriends, setCheckedFriends] = React.useState([]);
-  const [selectedFriendsArray, setSelectedFriendArray] = React.useState([]);
+  const userCtx = React.useContext(UserContext)
+  const [checkedFriends, setCheckedFriends] = React.useState([])
+  const [selectedFriendsArray, setSelectedFriendArray] = React.useState([])
+  const [input, setInput] = React.useState('')
   const [limit, setLimit] = React.useState(5)
+  const [imageAsFile, setImageAsFile] = React.useState('')
+  const [imageAsUrl, setImageAsUrl] = React.useState('')
   const usersRef = db.collection('users').orderBy('email', 'asc')
   const [usersSnapshot, loading] = useCollection(usersRef.limit(limit))
 
@@ -76,7 +85,7 @@ export default function AlertDialog({ open, handleClose }) {
       newCheckedFriends.splice(currentIndex, 1);
       newSelectedFriends.splice(currentIndex, 1);
     }
-    console.log(newSelectedFriends)
+
     setCheckedFriends(newCheckedFriends);
     setSelectedFriendArray(newSelectedFriends)
   };
@@ -89,11 +98,79 @@ export default function AlertDialog({ open, handleClose }) {
   function handleCloseDialog() {
     handleClose()
     setLimit(5)
+    setCheckedFriends([])
+    setSelectedFriendArray([])
+    setImageAsUrl('')
+    setImageAsFile('')
+    setInput('')
   }
 
-  function handleCreateGroup() {
-    handleClose()
+  function createGroup(firebaseUrl) {
+    const friends = [...getFriends()]
+    db.collection('groups').add({
+      users: friends,
+      groupPhoto: firebaseUrl,
+      groupName: input
+    })
+    handleCloseDialog()
   }
+
+  function getFriends() {
+    const friends = []
+    for (let index = 0; index < selectedFriendsArray.length; index++) {
+      const element = selectedFriendsArray[index];
+      friends.push(element.email)
+    }
+    friends.push(userCtx.email)
+    return friends
+  }
+
+  async function handleCreateGroup(e) {
+    e.preventDefault()
+
+    const friends = getFriends()
+
+    if (friends && input.trim().length >= 1)
+      handleFireBaseUpload()
+    else
+      handleCloseDialog()
+  }
+
+  const handleImageAsFile = (e) => {
+    const image = e.target.files[0]
+    if (image) {
+      setImageAsFile(imageFile => (image))
+      setImageAsUrl(URL.createObjectURL(image))
+    }
+  }
+
+  function handleFireBaseUpload() {
+    if (imageAsFile) {
+      const uploadTask = storage.ref(`/images/${imageAsFile.name}`).put(imageAsFile)
+      //initiates the firebase side uploading 
+      uploadTask.on('state_changed',
+        (snapShot) => {
+          //takes a snap shot of the process as it is happening
+          console.log(snapShot)
+        }, (err) => {
+          //catches the errors
+          return false
+        }, () => {
+          // gets the functions from storage refences the image storage in firebase by the children
+          // gets the download url then sets the image from firebase as the value for the imgUrl key:
+          storage.ref('images').child(imageAsFile.name).getDownloadURL()
+            .then(fireBaseUrl => {
+              createGroup(fireBaseUrl)
+            })
+            .catch(err => {
+              handleCloseDialog()
+            })
+        })
+    }
+    else
+      createGroup('')
+  }
+
 
   function handleTextWidth() {
     if (windowSize.width >= 900)
@@ -117,10 +194,6 @@ export default function AlertDialog({ open, handleClose }) {
       return (4)
   }
 
-  useEffect(() => {
-
-  }, [windowSize])
-
   return (
     <div>
       <Dialog
@@ -136,20 +209,45 @@ export default function AlertDialog({ open, handleClose }) {
         <DialogContent>
           <Grid container direction='column' justify='center' alignItems='center' spacing={3}>
             <Grid item xs={12}>
-              <Avatar className={classes.large}>
-                <AddAPhotoIcon />
-              </Avatar>
+              {
+                !imageAsUrl ?
+                  <>
+                    <label for="avatar-file">
+                      <Avatar className={classes.large}>
+                        <AddAPhotoIcon />
+                      </Avatar>
+                    </label>
+                    <input accept="image/*" id="avatar-file"
+                      type="file"
+                      onChange={handleImageAsFile}
+                      style={{ display: "none" }}
+                    />
+                  </>
+                  :
+                  <>
+                    <label for="avatar-file">
+                      <Avatar src={imageAsUrl} className={classes.large} />
+                    </label>
+                    <input accept="image/*" id="avatar-file"
+                      type="file"
+                      onChange={handleImageAsFile}
+                      style={{ display: "none" }}
+                    />
+                  </>
+              }
             </Grid>
             <Grid item xs={12} className={classes.fullWidth}>
               <TextField
                 id="standard-basic"
                 label="Digite o nome do grupo"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 multiline
                 fullWidth
               />
             </Grid>
             <Grid item >
-              <Grid container direction='column' justify='flex-start' alignItems='center' spacing={3}>
+              <Grid container direction='column' justify='flex-start' alignItems='center' spacing={1}>
                 <Grid item>
                   <Typography variant='h6' className={classes.alignCenter}>
                     Selecione os usuário para o seu grupo
@@ -164,7 +262,6 @@ export default function AlertDialog({ open, handleClose }) {
                       })}
                     </AvatarGroup>
                   }
-
                 </Grid>
                 <Grid item>
                   <div className={classes.userList}>
@@ -172,7 +269,8 @@ export default function AlertDialog({ open, handleClose }) {
                       {usersSnapshot?.docs.map((user, index) => {
                         const userData = user.data()
                         return !loading ?
-                          <ListItem key={userData.email} button onClick={handleToggle(index)}>
+                          userCtx.email !== userData.email &&
+                          <ListItem key={userData.email} button onClick={handleToggle(index)} >
                             <ListItemAvatar>
                               <Avatar
                                 className={classes.small}
@@ -205,9 +303,9 @@ export default function AlertDialog({ open, handleClose }) {
                             />
                           </ListItem>
                       })}
-                      <button onClick={loadMoreFriend}>
-                        Load
-                  </button>
+                      <Button onClick={loadMoreFriend} className={classes.loadButton} color='primary' variant="contained">
+                        Carregar mais amigos
+                      </Button>
                     </List>
                   </div>
                 </Grid>
@@ -224,6 +322,6 @@ export default function AlertDialog({ open, handleClose }) {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </div >
   );
 }

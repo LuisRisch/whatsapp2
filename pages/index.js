@@ -24,7 +24,7 @@ export default function Home() {
   const classes = useStyles()
   const userCtx = useContext(UserContext)
 
-  function handleOk(){
+  function handleOk() {
     router.push("/chat-page")
   }
 
@@ -140,7 +140,7 @@ export default function Home() {
                 </Grid>
               </Grid>
               <Grid item>
-                <h1 className={styles.lighter}>
+                <h1 className={styles.lighter} style={{textAlign: 'center'}}>
                   Essa é a sua conta?
                 </h1>
               </Grid>
